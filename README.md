@@ -1,6 +1,6 @@
-## GraphBench
+## GraphGolfingBench
 
-How effective are large language models at graph compression?
+Golfing the graph
 
 ## Setup
 

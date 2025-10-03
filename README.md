@@ -19,7 +19,7 @@ To visualize the evals, run `uv run visualization/visualize_results.py`. Images 
 
 ## Run Eval
 
-Set `OPENAI_API_KEY` in your environment (or in the `.env` file), then:
+Set the `OPENAI_API_KEY`, then:
 
 `uv run run_eval.py`
 
@@ -27,8 +27,4 @@ First look in the file and set the config you want.
 
 ## Testing
 
-`uv run pytest .` (why would you do this?)
-
-## Report
-
-[REPORT.md](./REPORT.md)
+`uv run pytest .` (why?)

@@ -1,0 +1,212 @@
+You are a graph compression expert. Your task is to write a function called 'compress' that reconstructs a given graph using a custom DSL, optimizing for minimal cost.
+
+## OBJECTIVE
+
+Write a `compress()` function that reconstructs the exact graph structure from the given adjacency matrix while MINIMIZING the total program cost. The cost is calculated based on the number of arguments in function calls according to specific rules (see COST CALCULATION section).
+
+## GRAPH REPRESENTATION
+
+### Types
+- **Number** = int
+- **Vertex** = int (non-negative, 0-based indices)
+- **Edge** = tuple[Vertex, Vertex] (undirected; edges are stored as (min(u,v), max(u,v)); self-loops allowed as (v,v))
+- **EdgeList** = list[Edge] (duplicates are automatically removed)
+- **VertexList** = list[Vertex] (duplicates are automatically removed)
+- **Graph** = tuple[VertexList, EdgeList] (immutable; all functions return new graphs)
+
+### Important Properties
+- Graphs are UNDIRECTED: edge (a,b) is equivalent to edge (b,a)
+- Self-loops are allowed: represented as (v,v)
+- Graph isomorphism: vertex labels don't matter, only structure counts
+
+## DSL FUNCTIONS
+
+### Graph Constructors
+1. **path_graph(start, end=None, step=1)** → Graph
+   - Creates a path connecting vertices in range(start, end, step)
+   - path_graph(5) = path over [0,1,2,3,4] with edges [(0,1),(1,2),(2,3),(3,4)]
+   - path_graph(2, 6) = path over [2,3,4,5] with edges [(2,3),(3,4),(4,5)]
+
+2. **cycle_graph(start, end=None, step=1)** → Graph
+   - Creates a cycle connecting vertices in range(start, end, step)
+   - cycle_graph(4) = cycle over [0,1,2,3] with edges [(0,1),(1,2),(2,3),(0,3)]
+   - Requires at least 3 vertices; returns empty edges otherwise
+
+3. **complete_graph(start, end=None, step=1)** → Graph
+   - Creates a complete graph (all vertices connected) over range(start, end, step)
+   - complete_graph(3) = K₃ with vertices [0,1,2] and edges [(0,1),(0,2),(1,2)]
+
+### Vertex Connection Functions
+4. **connect_one_to_all(center, *targets)** → Graph
+   - Note: First argument is the CENTER vertex, remaining arguments are TARGET vertices
+   - Creates a star: center connected to each target
+   - connect_one_to_all(0, 1, 2, 3) creates edges [(0,1),(0,2),(0,3)]
+
+5. **fully_connect(*vertices)** → Graph
+   - Creates a complete graph on the specified vertices
+   - fully_connect(1, 3, 5) creates edges [(1,3),(1,5),(3,5)]
+
+### Graph Transformations
+6. **shift_graph(graph, offset)** → Graph
+   - Shifts all vertex indices by offset
+   - shift_graph(path_graph(3), 10) transforms [0,1,2] to [10,11,12]
+
+7. **union_graphs(*graphs)** → Graph
+   - Combines multiple graphs by unioning vertices and edges
+   - Removes duplicates automatically
+
+8. **add_edges(graph, *edges)** → Graph
+   - Adds edges to existing graph (also adds any missing vertices)
+   - add_edges(g, (0,5), (2,7)) adds these edges and vertices 5,7 if missing
+
+9. **remove_edges(graph, *edges)** → Graph
+    - Removes specified edges from graph
+    - Works with edges in either direction: (a,b) or (b,a)
+
+### Vertex Operations
+10. **merge_vertices(graph, v1, v2)** → Graph
+    - Merges v2 into v1 (v2 is removed, its edges redirected to v1)
+    - All edges incident to v2 become incident to v1
+
+11. **remove_vertex(graph, v)** → Graph
+    - Removes vertex and all its incident edges
+
+### Higher-Order Function
+12. **union_map(items, lambda_fn)** → Graph
+    - Maps lambda_fn over items, unions resulting graphs
+    - Note: The lambda function can ONLY call DSL functions
+    - Example: union_map(numerical_range(3), lambda i: path_graph(i, i+2))
+
+### Utility Functions
+13. **numerical_range(start, end=None, step=1)** → list[int]
+    - Same as Python's range() but returns a list
+    - Used primarily as input to union_map
+
+14. **vertices(start, end=None, step=1)** → list[Vertex]
+    - Alias for numerical_range, creates vertex lists
+    - Syntactic sugar for readability
+
+## COST CALCULATION
+
+The cost model follows these rules:
+
+### Basic Cost Rules:
+1. **Function Application Cost** = number of arguments passed
+   - path_graph(5) → cost = 1
+   - path_graph(0, 5) → cost = 2
+   - path_graph(0, 10, 2) → cost = 3
+   - connect_one_to_all(0, 1, 2, 3) → cost = 4 (one center + three targets)
+   - union_graphs(g1, g2, g3) → cost = 3
+
+2. **Lambda/Function Abstraction Cost** = 1 + cost of body
+   - lambda i: path_graph(i) → cost = 1 + 1 = 2
+   - lambda x: complete_graph(x, x+3) → cost = 1 + 2 = 3
+
+3. **union_map Cost** = cost(items function) + cost(lambda)
+   - union_map(numerical_range(3), lambda i: complete_graph(i)) 
+     → cost = 1 (for numerical_range(3)) + 2 (for lambda: 1 + 1) = 3
+   - union_map(numerical_range(2, 5), lambda i: path_graph(i, i+3))
+     → cost = 2 (for numerical_range(2, 5)) + 3 (for lambda: 1 + 2) = 5
+
+### Total Program Cost:
+The total cost is the sum of costs for all terms (function calls) in your program.
+
+## EXAMPLES WITH TRIVIAL GRAPHS
+
+### Example 1: Path Graph (5 vertices)
+Input adjacency matrix:
+```
+[[0,1,0,0,0],
+ [1,0,1,0,0],
+ [0,1,0,1,0],
+ [0,0,1,0,1],
+ [0,0,0,1,0]]
+```
+Solution:
+```python
+def compress():
+    return path_graph(5)  # Cost: 1
+```
+
+### Example 2: Triangle (K₃)
+Input adjacency matrix:
+```
+[[0,1,1],
+ [1,0,1],
+ [1,1,0]]
+```
+Solution:
+```python
+def compress():
+    return complete_graph(3)  # Cost: 1
+```
+
+### Example 3: Star with Center at 0
+Input adjacency matrix:
+```
+[[0,1,1,1],
+ [1,0,0,0],
+ [1,0,0,0],
+ [1,0,0,0]]
+```
+Solution:
+```python
+def compress():
+    return connect_one_to_all(0, 1, 2, 3)  # Cost: 4
+```
+
+### Example 4: Two Triangles Connected by a Bridge
+Input adjacency matrix:
+```
+[[0,1,1,0,0,0],
+ [1,0,1,0,0,0],
+ [1,1,0,1,0,0],
+ [0,0,1,0,1,1],
+ [0,0,0,1,0,1],
+ [0,0,0,1,1,0]]
+```
+Solution:
+```python
+def compress():
+    k3_a = complete_graph(3)                    # Cost: 1
+    k3_b = complete_graph(3, 6)                 # Cost: 2  
+    return union_graphs(k3_a, k3_b)             # Cost: 2
+    # Total cost: 5
+```
+
+## INPUT/OUTPUT FORMAT
+
+### Input Format:
+- Undirected graph as symmetric adjacency matrix
+- matrix[i][j] = 1 if edge exists, 0 otherwise
+- matrix[i][j] must equal matrix[j][i]
+
+### Output Format:
+- Define a function named `compress()` with no parameters
+- Use ONLY DSL functions (no Python builtins except for intermediate variables)
+- One DSL function call per line
+- Must return a Graph object
+- The returned graph must be isomorphic to the input
+
+### Valid Output Example:
+```python
+def compress():
+    g1 = path_graph(4)
+    g2 = cycle_graph(4, 8)
+    return union_graphs(g1, g2)
+```
+
+### Invalid Output Examples:
+```python
+# WRONG: Using non-DSL functions
+def compress():
+    vertices = [0, 1, 2]  # Can't create lists directly
+    edges = [(0,1), (1,2)]  # Can't create edges directly
+    return (vertices, edges)
+
+# WRONG: Multiple calls per line
+def compress():
+    return union_graphs(path_graph(3), cycle_graph(3))  # Must be separate lines
+```
+
+Remember: Your goal is to minimize total cost while exactly reconstructing the graph structure!

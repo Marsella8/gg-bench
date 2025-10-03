@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>The Zoo of Graphs</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
+    <style>
+      :root {{ --gap: 16px; --muted:#555; --border:#e5e5e5; --bg-soft:#fafafa; --chip-bg:#f6f8ff; --chip-border:#e0e6ff; }}
+      html, body {{ height: 100%; margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif; }}
+      header {{ padding: 16px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: #fff; z-index: 1; }}
+      .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--gap); padding: var(--gap); }}
+      .card {{ border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }}
+      .card:hover {{ box-shadow: 0 2px 8px rgba(0,0,0,0.06); }}
+      .title {{ padding: 12px 14px; font-size: 14px; background: var(--bg-soft); border-bottom: 1px solid #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+      .meta {{ padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }}
+      .pills {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+      .pill {{ display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; background: var(--chip-bg); border: 1px solid var(--chip-border); color: var(--muted); font-size: 12px; }}
+      .pill .k {{ opacity: 0.8; }}
+      .pill .v {{ color: #111; font-weight: 600; }}
+      .cy {{ height: 340px; }}
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>The Zoo of Graphs</strong>
+      <span style="color:#666; margin-left: 8px;">{graph_count} graphs</span>
+    </header>
+    <div class="grid" id="grid"></div>
+    <script>
+      const GRAPHS = {graphs_json};
+      const grid = document.getElementById('grid');
+      const pill = (k, v) => `<span class="pill"><span class="k">${{k}}:</span><span class="v">${{v}}</span></span>`;
+      GRAPHS.forEach((g, idx) => {{
+        const card = document.createElement('div');
+        card.className = 'card';
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = g.name;
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const cost = (g.dsl_cost !== null && g.dsl_cost !== undefined) ? g.dsl_cost : '-';
+        const naive = (g.naive_cost !== null && g.naive_cost !== undefined) ? g.naive_cost : '-';
+        const ratioVal = (g.ratio !== null && g.ratio !== undefined) ? g.ratio.toFixed(2) : '-';
+        const ratio = ratioVal === '-' ? '-' : `${{ratioVal}}×`;
+        meta.innerHTML = `<div class="pills">${{[
+          pill('Baseline Cost', cost),
+          pill('Naive Cost', naive),
+          pill('Compression Ratio', ratio),
+        ].join('')}}` + `</div>`;
+        const cyDiv = document.createElement('div');
+        cyDiv.className = 'cy';
+        cyDiv.id = 'cy-' + idx;
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(cyDiv);
+        grid.appendChild(card);
+
+        cytoscape({{
+          container: cyDiv,
+          elements: g.elements,
+          style: [
+            {{ selector: 'node', style: {{ 'background-color': '#666', 'label': 'data(id)', 'color': '#111', 'font-size': 10 }} }},
+            {{ selector: 'edge', style: {{ 'width': 2, 'line-color': '#bbb' }} }}
+          ],
+          layout: {{ name: 'cose', idealEdgeLength: 80, nodeRepulsion: 400000, padding: 20, animate: false }}
+        }});
+      }});
+    </script>
+  </body>
+</html>

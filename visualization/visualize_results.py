@@ -132,7 +132,7 @@ def create_status_table():
     ])
     norm = plt.cm.colors.BoundaryNorm([-1.5, -0.5, 0.25, 0.75, 1.5], cmap.N)
 
-    ax.imshow(color_df.values, cmap=cmap, norm=norm, aspect="auto")
+    im = ax.imshow(color_df.values, cmap=cmap, norm=norm, aspect="auto")
 
     ax.set_xticks(range(len(models)))
     ax.set_xticklabels(models, rotation=45, ha="right")
